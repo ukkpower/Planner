@@ -1,11 +1,13 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { MoodBoardView } from '../components/board/MoodBoardView'
 import { LevelRail } from '../components/layout/LevelRail'
 import { MainSidebar } from '../components/layout/MainSidebar'
 import { TopNav } from '../components/layout/TopNav'
 import { AddLevelModal } from '../components/modals/AddLevelModal'
+import { DeleteLevelModal } from '../components/modals/DeleteLevelModal'
 import { useAppStore } from '../stores/useAppStore'
 import { useBoardStore } from '../stores/useBoardStore'
+import type { Level } from '../types/level'
 
 export function AppShell() {
   const {
@@ -23,6 +25,7 @@ export function AppShell() {
     deleteLevel,
   } = useAppStore()
   const { loadBoard, flushPendingSave } = useBoardStore()
+  const [levelToDelete, setLevelToDelete] = useState<Level>()
 
   const activeLevel = levels.find((level) => level.id === activeLevelId)
 
@@ -64,7 +67,7 @@ export function AppShell() {
             void flushPendingSave().then(() => setActiveLevel(levelId))
           }}
           onAddLevel={openAddLevelModal}
-          onDeleteLevel={(levelId) => flushPendingSave().then(() => deleteLevel(levelId))}
+          onDeleteLevel={setLevelToDelete}
         />
         <main className="flex min-w-0 flex-1 flex-col">
           <TopNav activeSection={activeSection} activeLevel={activeLevel} />
@@ -73,6 +76,13 @@ export function AppShell() {
       </div>
       {isAddLevelOpen ? (
         <AddLevelModal onClose={closeAddLevelModal} onCreate={createLevel} />
+      ) : null}
+      {levelToDelete ? (
+        <DeleteLevelModal
+          level={levelToDelete}
+          onClose={() => setLevelToDelete(undefined)}
+          onDelete={(levelId) => flushPendingSave().then(() => deleteLevel(levelId))}
+        />
       ) : null}
     </div>
   )
