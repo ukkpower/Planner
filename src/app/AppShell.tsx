@@ -1,0 +1,79 @@
+import { useEffect } from 'react'
+import { MoodBoardView } from '../components/board/MoodBoardView'
+import { LevelRail } from '../components/layout/LevelRail'
+import { MainSidebar } from '../components/layout/MainSidebar'
+import { TopNav } from '../components/layout/TopNav'
+import { AddLevelModal } from '../components/modals/AddLevelModal'
+import { useAppStore } from '../stores/useAppStore'
+import { useBoardStore } from '../stores/useBoardStore'
+
+export function AppShell() {
+  const {
+    initialized,
+    initialize,
+    levels,
+    activeSection,
+    activeLevelId,
+    isAddLevelOpen,
+    setActiveSection,
+    setActiveLevel,
+    openAddLevelModal,
+    closeAddLevelModal,
+    createLevel,
+    deleteLevel,
+  } = useAppStore()
+  const { loadBoard, flushPendingSave } = useBoardStore()
+
+  const activeLevel = levels.find((level) => level.id === activeLevelId)
+
+  useEffect(() => {
+    void initialize()
+  }, [initialize])
+
+  useEffect(() => {
+    if (initialized) {
+      void loadBoard(activeLevelId, activeSection)
+    }
+  }, [activeLevelId, activeSection, initialized, loadBoard])
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      void flushPendingSave()
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [flushPendingSave])
+
+  return (
+    <div className="min-h-screen bg-[#111419] text-stone-100">
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,rgba(123,181,148,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.04),transparent_35%)]" />
+      <div className="relative flex h-screen overflow-hidden">
+        <MainSidebar
+          activeSection={activeSection}
+          onAddLevel={openAddLevelModal}
+          onSectionChange={(section) => {
+            void flushPendingSave().then(() => setActiveSection(section))
+          }}
+        />
+        <LevelRail
+          levels={levels}
+          activeLevelId={activeLevelId}
+          activeSection={activeSection}
+          onLevelChange={(levelId) => {
+            void flushPendingSave().then(() => setActiveLevel(levelId))
+          }}
+          onAddLevel={openAddLevelModal}
+          onDeleteLevel={(levelId) => flushPendingSave().then(() => deleteLevel(levelId))}
+        />
+        <main className="flex min-w-0 flex-1 flex-col">
+          <TopNav activeSection={activeSection} activeLevel={activeLevel} />
+          <MoodBoardView initialized={initialized} activeLevel={activeLevel} />
+        </main>
+      </div>
+      {isAddLevelOpen ? (
+        <AddLevelModal onClose={closeAddLevelModal} onCreate={createLevel} />
+      ) : null}
+    </div>
+  )
+}
