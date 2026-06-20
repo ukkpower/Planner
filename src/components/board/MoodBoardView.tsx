@@ -1,13 +1,15 @@
 import { BoardCanvas } from './BoardCanvas'
+import { LevelInfoPanel } from './LevelInfoPanel'
 import type { Level } from '../../types/level'
 import { useBoardStore } from '../../stores/useBoardStore'
 
 type MoodBoardViewProps = {
   initialized: boolean
   activeLevel?: Level
+  onEditLevel: (level: Level) => void
 }
 
-export function MoodBoardView({ initialized, activeLevel }: MoodBoardViewProps) {
+export function MoodBoardView({ initialized, activeLevel, onEditLevel }: MoodBoardViewProps) {
   const { board, items, assetsById, loading, error } = useBoardStore()
 
   if (!initialized || loading) {
@@ -44,5 +46,10 @@ export function MoodBoardView({ initialized, activeLevel }: MoodBoardViewProps) 
     )
   }
 
-  return <BoardCanvas items={items} assetsById={assetsById} />
+  return (
+    <section className="flex min-h-0 flex-1 bg-[#14171d]">
+      <BoardCanvas items={items} assetsById={assetsById} />
+      <LevelInfoPanel level={activeLevel} onEditLevel={onEditLevel} />
+    </section>
+  )
 }

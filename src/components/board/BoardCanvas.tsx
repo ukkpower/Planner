@@ -18,7 +18,7 @@ export function BoardCanvas({ items, assetsById }: BoardCanvasProps) {
   const sortedItems = [...items].sort((a, b) => a.zIndex - b.zIndex)
 
   return (
-    <section className="min-h-0 flex-1 overflow-auto bg-[#14171d]">
+    <div className="min-w-0 flex-1 overflow-auto bg-[#14171d]">
       <div
         className="relative h-[3000px] w-[4000px] bg-[#181c23]"
         onMouseDown={(event) => {
@@ -36,6 +36,6 @@ export function BoardCanvas({ items, assetsById }: BoardCanvasProps) {
           <BoardItemRenderer key={item.id} item={item} asset={assetsById[item.type === 'image' ? item.assetId : '']} />
         ))}
       </div>
-    </section>
+    </div>
   )
 }

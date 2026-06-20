@@ -1,4 +1,5 @@
-import { Plus, Trash2 } from 'lucide-react'
+import { useState, type DragEvent } from 'react'
+import { GripVertical, Plus, Trash2 } from 'lucide-react'
 import type { BoardSection } from '../../types/board'
 import { sectionLabels } from '../../types/board'
 import type { Level } from '../../types/level'
@@ -10,6 +11,7 @@ type LevelRailProps = {
   onLevelChange: (levelId: string) => void
   onAddLevel: () => void
   onDeleteLevel: (level: Level) => void
+  onReorderLevels: (orderedLevelIds: string[]) => void | Promise<void>
 }
 
 export function LevelRail({
@@ -19,7 +21,62 @@ export function LevelRail({
   onLevelChange,
   onAddLevel,
   onDeleteLevel,
+  onReorderLevels,
 }: LevelRailProps) {
+  const [draggedLevelId, setDraggedLevelId] = useState<string>()
+  const [dragOverLevelId, setDragOverLevelId] = useState<string>()
+
+  function reorderLevel(draggedId: string, targetId: string) {
+    if (draggedId === targetId) {
+      return
+    }
+
+    const fromIndex = levels.findIndex((level) => level.id === draggedId)
+    const toIndex = levels.findIndex((level) => level.id === targetId)
+
+    if (fromIndex < 0 || toIndex < 0) {
+      return
+    }
+
+    const nextLevels = [...levels]
+    const [draggedLevel] = nextLevels.splice(fromIndex, 1)
+    nextLevels.splice(toIndex, 0, draggedLevel)
+
+    void onReorderLevels(nextLevels.map((level) => level.id))
+  }
+
+  function handleDragStart(event: DragEvent<HTMLButtonElement>, levelId: string) {
+    setDraggedLevelId(levelId)
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', levelId)
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>, levelId: string) {
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+
+    if (draggedLevelId && draggedLevelId !== levelId) {
+      setDragOverLevelId(levelId)
+    }
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>, targetLevelId: string) {
+    event.preventDefault()
+    const droppedLevelId = draggedLevelId ?? event.dataTransfer.getData('text/plain')
+
+    setDraggedLevelId(undefined)
+    setDragOverLevelId(undefined)
+
+    if (droppedLevelId) {
+      reorderLevel(droppedLevelId, targetLevelId)
+    }
+  }
+
+  function handleDragEnd() {
+    setDraggedLevelId(undefined)
+    setDragOverLevelId(undefined)
+  }
+
   return (
     <aside className="z-10 flex h-screen w-[272px] shrink-0 flex-col border-r border-white/10 bg-[#1d2028]/95">
       <div className="border-b border-white/10 px-6 py-7">
@@ -59,19 +116,37 @@ export function LevelRail({
           <nav className="space-y-2">
             {levels.map((level) => {
               const active = level.id === activeLevelId
+              const dragging = level.id === draggedLevelId
+              const dropTarget = level.id === dragOverLevelId && !dragging
+
               return (
                 <div
                   key={level.id}
-                  className="group relative"
+                  onDragOver={(event) => handleDragOver(event, level.id)}
+                  onDragLeave={() => setDragOverLevelId(undefined)}
+                  onDrop={(event) => handleDrop(event, level.id)}
+                  className={`group relative transition ${dragging ? 'opacity-45' : ''}`}
                 >
                   <button
                     type="button"
+                    draggable
+                    onDragStart={(event) => handleDragStart(event, level.id)}
+                    onDragEnd={handleDragEnd}
+                    className="absolute left-2 top-2 z-10 grid h-8 w-8 cursor-grab place-items-center rounded-[8px] border border-white/8 bg-[#1d2028]/95 text-stone-500 shadow-lg transition hover:border-[#88c39d]/35 hover:text-[#b8e3c5] active:cursor-grabbing"
+                    title={`Drag Level ${level.number}`}
+                    aria-label={`Drag Level ${level.number}`}
+                    aria-grabbed={dragging}
+                  >
+                    <GripVertical size={16} />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => onLevelChange(level.id)}
-                    className={`w-full rounded-[8px] border p-4 pr-11 text-left transition ${
+                    className={`w-full rounded-[8px] border p-4 pl-12 pr-11 text-left transition ${
                       active
                         ? 'border-[#88c39d]/45 bg-[#26312b] shadow-[0_12px_36px_rgba(0,0,0,0.24)]'
                         : 'border-white/8 bg-white/[0.025] hover:border-white/16 hover:bg-white/[0.045]'
-                    }`}
+                    } ${dropTarget ? 'ring-1 ring-[#88c39d]/70' : ''}`}
                   >
                     <span className="block text-sm font-semibold text-stone-100">
                       Level {level.number}
@@ -79,11 +154,6 @@ export function LevelRail({
                     <span className="mt-1 block text-xs leading-5 text-stone-400">
                       {level.name}
                     </span>
-                    {level.theme ? (
-                      <span className="mt-3 inline-flex rounded-[6px] border border-white/10 px-2 py-1 text-[11px] text-stone-400">
-                        {level.theme}
-                      </span>
-                    ) : null}
                   </button>
                   <button
                     type="button"

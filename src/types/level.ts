@@ -17,3 +17,5 @@ export type NewLevelInput = {
   description?: string
   notes?: string
 }
+
+export type UpdateLevelInput = NewLevelInput

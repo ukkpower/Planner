@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { levelRepository } from '../repositories/levelRepository'
 import { settingsRepository } from '../repositories/settingsRepository'
 import type { BoardSection } from '../types/board'
-import type { Level, NewLevelInput } from '../types/level'
+import type { Level, NewLevelInput, UpdateLevelInput } from '../types/level'
 
 type AppState = {
   initialized: boolean
@@ -16,6 +16,8 @@ type AppState = {
   openAddLevelModal: () => void
   closeAddLevelModal: () => void
   createLevel: (input: NewLevelInput) => Promise<void>
+  updateLevel: (levelId: string, input: UpdateLevelInput) => Promise<void>
+  reorderLevels: (orderedLevelIds: string[]) => Promise<void>
   deleteLevel: (levelId: string) => Promise<void>
 }
 
@@ -72,6 +74,20 @@ export const useAppStore = create<AppState>((set, get) => ({
       isAddLevelOpen: false,
     }))
     await settingsRepository.updateActiveContext(activeSection, level.id)
+  },
+
+  async updateLevel(levelId, input) {
+    const level = await levelRepository.updateLevel(levelId, input)
+    set((state) => ({
+      levels: state.levels
+        .map((currentLevel) => (currentLevel.id === levelId ? level : currentLevel))
+        .sort((a, b) => a.number.localeCompare(b.number)),
+    }))
+  },
+
+  async reorderLevels(orderedLevelIds) {
+    const reorderedLevels = await levelRepository.reorderLevels(orderedLevelIds)
+    set({ levels: reorderedLevels })
   },
 
   async deleteLevel(levelId) {

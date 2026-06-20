@@ -5,6 +5,7 @@ import { MainSidebar } from '../components/layout/MainSidebar'
 import { TopNav } from '../components/layout/TopNav'
 import { AddLevelModal } from '../components/modals/AddLevelModal'
 import { DeleteLevelModal } from '../components/modals/DeleteLevelModal'
+import { EditLevelModal } from '../components/modals/EditLevelModal'
 import { useAppStore } from '../stores/useAppStore'
 import { useBoardStore } from '../stores/useBoardStore'
 import type { Level } from '../types/level'
@@ -22,10 +23,13 @@ export function AppShell() {
     openAddLevelModal,
     closeAddLevelModal,
     createLevel,
+    updateLevel,
+    reorderLevels,
     deleteLevel,
   } = useAppStore()
   const { loadBoard, flushPendingSave } = useBoardStore()
   const [levelToDelete, setLevelToDelete] = useState<Level>()
+  const [levelToEdit, setLevelToEdit] = useState<Level>()
 
   const activeLevel = levels.find((level) => level.id === activeLevelId)
 
@@ -68,10 +72,17 @@ export function AppShell() {
           }}
           onAddLevel={openAddLevelModal}
           onDeleteLevel={setLevelToDelete}
+          onReorderLevels={(orderedLevelIds) => {
+            void flushPendingSave().then(() => reorderLevels(orderedLevelIds))
+          }}
         />
         <main className="flex min-w-0 flex-1 flex-col">
           <TopNav activeSection={activeSection} activeLevel={activeLevel} />
-          <MoodBoardView initialized={initialized} activeLevel={activeLevel} />
+          <MoodBoardView
+            initialized={initialized}
+            activeLevel={activeLevel}
+            onEditLevel={setLevelToEdit}
+          />
         </main>
       </div>
       {isAddLevelOpen ? (
@@ -82,6 +93,13 @@ export function AppShell() {
           level={levelToDelete}
           onClose={() => setLevelToDelete(undefined)}
           onDelete={(levelId) => flushPendingSave().then(() => deleteLevel(levelId))}
+        />
+      ) : null}
+      {levelToEdit ? (
+        <EditLevelModal
+          level={levelToEdit}
+          onClose={() => setLevelToEdit(undefined)}
+          onUpdate={updateLevel}
         />
       ) : null}
     </div>
