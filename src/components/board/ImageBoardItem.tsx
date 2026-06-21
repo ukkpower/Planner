@@ -13,11 +13,46 @@ type ImageBoardItemProps = {
   asset?: AssetEntry
 }
 
+function getImageAspectRatio(item: ImageBoardItemType, asset?: AssetEntry) {
+  if (asset?.width && asset.height) {
+    return asset.width / asset.height
+  }
+
+  return item.width / item.height
+}
+
+function getAspectLockedFrame(
+  direction: string,
+  position: { x: number; y: number },
+  width: number,
+  aspectRatio: number,
+) {
+  const normalizedWidth = Math.round(width)
+  const normalizedHeight = Math.round(normalizedWidth / aspectRatio)
+  const normalizedDirection = direction.toLowerCase()
+  const roundedPosition = {
+    x: Math.round(position.x),
+    y: Math.round(position.y),
+  }
+
+  return {
+    x: normalizedDirection.includes('left')
+      ? Math.round(position.x + width - normalizedWidth)
+      : roundedPosition.x,
+    y: normalizedDirection.includes('top')
+      ? Math.round(position.y + width / aspectRatio - normalizedHeight)
+      : roundedPosition.y,
+    width: normalizedWidth,
+    height: normalizedHeight,
+  }
+}
+
 export function ImageBoardItem({ item, asset }: ImageBoardItemProps) {
   const selectedItemId = useBoardStore((state) => state.selectedItemId)
   const selectItem = useBoardStore((state) => state.selectItem)
   const updateItemFrame = useBoardStore((state) => state.updateItemFrame)
   const selected = selectedItemId === item.id
+  const aspectRatio = getImageAspectRatio(item, asset)
 
   return (
     <Rnd
@@ -26,6 +61,7 @@ export function ImageBoardItem({ item, asset }: ImageBoardItemProps) {
       bounds="parent"
       minWidth={96}
       minHeight={72}
+      lockAspectRatio={aspectRatio}
       disableDragging={item.locked}
       style={{ zIndex: item.zIndex }}
       onMouseDown={(event) => {
@@ -40,13 +76,11 @@ export function ImageBoardItem({ item, asset }: ImageBoardItemProps) {
           height: item.height,
         })
       }}
-      onResizeStop={(_event, _direction, ref, _delta, position) => {
-        updateItemFrame(item.id, {
-          x: Math.round(position.x),
-          y: Math.round(position.y),
-          width: Math.round(ref.offsetWidth),
-          height: Math.round(ref.offsetHeight),
-        })
+      onResizeStop={(_event, direction, ref, _delta, position) => {
+        updateItemFrame(
+          item.id,
+          getAspectLockedFrame(direction, position, ref.offsetWidth, aspectRatio),
+        )
       }}
       className={`group rounded-[8px] border bg-[#0f1217] shadow-2xl transition ${
         selected ? 'border-[#88c39d] ring-2 ring-[#88c39d]/25' : 'border-white/12'
