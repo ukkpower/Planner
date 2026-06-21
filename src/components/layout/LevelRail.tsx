@@ -1,5 +1,5 @@
 import { useState, type DragEvent } from 'react'
-import { GripVertical, Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import type { BoardSection } from '../../types/board'
 import { sectionLabels } from '../../types/board'
 import type { Level } from '../../types/level'
@@ -51,7 +51,7 @@ export function LevelRail({
     event.dataTransfer.setData('text/plain', levelId)
   }
 
-  function handleDragOver(event: DragEvent<HTMLDivElement>, levelId: string) {
+  function handleDragOver(event: DragEvent<HTMLElement>, levelId: string) {
     event.preventDefault()
     event.dataTransfer.dropEffect = 'move'
 
@@ -60,7 +60,7 @@ export function LevelRail({
     }
   }
 
-  function handleDrop(event: DragEvent<HTMLDivElement>, targetLevelId: string) {
+  function handleDrop(event: DragEvent<HTMLElement>, targetLevelId: string) {
     event.preventDefault()
     const droppedLevelId = draggedLevelId ?? event.dataTransfer.getData('text/plain')
 
@@ -122,27 +122,19 @@ export function LevelRail({
               return (
                 <div
                   key={level.id}
-                  onDragOver={(event) => handleDragOver(event, level.id)}
-                  onDragLeave={() => setDragOverLevelId(undefined)}
-                  onDrop={(event) => handleDrop(event, level.id)}
                   className={`group relative transition ${dragging ? 'opacity-45' : ''}`}
                 >
                   <button
                     type="button"
                     draggable
-                    onDragStart={(event) => handleDragStart(event, level.id)}
-                    onDragEnd={handleDragEnd}
-                    className="absolute left-2 top-2 z-10 grid h-8 w-8 cursor-grab place-items-center rounded-[8px] border border-white/8 bg-[#1d2028]/95 text-stone-500 shadow-lg transition hover:border-[#88c39d]/35 hover:text-[#b8e3c5] active:cursor-grabbing"
-                    title={`Drag Level ${level.number}`}
-                    aria-label={`Drag Level ${level.number}`}
-                    aria-grabbed={dragging}
-                  >
-                    <GripVertical size={16} />
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => onLevelChange(level.id)}
-                    className={`w-full rounded-[8px] border p-4 pl-12 pr-11 text-left transition ${
+                    onDragStart={(event) => handleDragStart(event, level.id)}
+                    onDragOver={(event) => handleDragOver(event, level.id)}
+                    onDragLeave={() => setDragOverLevelId(undefined)}
+                    onDrop={(event) => handleDrop(event, level.id)}
+                    onDragEnd={handleDragEnd}
+                    aria-grabbed={dragging}
+                    className={`w-full cursor-grab rounded-[8px] border p-4 pr-11 text-left transition active:cursor-grabbing ${
                       active
                         ? 'border-[#88c39d]/45 bg-[#26312b] shadow-[0_12px_36px_rgba(0,0,0,0.24)]'
                         : 'border-white/8 bg-white/[0.025] hover:border-white/16 hover:bg-white/[0.045]'

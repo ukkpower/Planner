@@ -1,0 +1,45 @@
+- generic [ref=e5]:
+  - complementary [ref=e6]:
+    - generic [ref=e10]:
+      - paragraph [ref=e11]: Levels
+      - navigation [ref=e12]:
+        - button "Research" [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+          - generic [ref=e16]: Research
+        - button "Planning" [ref=e17] [cursor=pointer]:
+          - img [ref=e18]
+          - generic [ref=e22]: Planning
+        - button "Final" [ref=e23] [cursor=pointer]:
+          - img [ref=e24]
+          - generic [ref=e27]: Final
+        - button "Add Level" [ref=e28] [cursor=pointer]:
+          - img [ref=e29]
+          - generic [ref=e32]: Add Level
+  - complementary [ref=e33]:
+    - generic [ref=e34]:
+      - paragraph [ref=e35]: Research
+      - generic [ref=e36]:
+        - heading "Level Boards" [level=1] [ref=e37]
+        - button "Add level" [ref=e38] [cursor=pointer]:
+          - img [ref=e39]
+    - generic [ref=e41]:
+      - paragraph [ref=e42]: No levels yet
+      - paragraph [ref=e43]: Add your first level to create Research, Planning, and Final boards.
+      - button "Add Level" [ref=e44] [cursor=pointer]:
+        - img [ref=e45]
+        - text: Add Level
+  - main [ref=e46]:
+    - generic [ref=e47]:
+      - generic [ref=e48]:
+        - paragraph [ref=e49]: Research board
+        - heading "No level selected" [level=2] [ref=e50]
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - img [ref=e53]
+          - generic [ref=e56]: Search levels later
+        - button "Upload Image" [disabled] [ref=e57]:
+          - img [ref=e58]
+          - text: Upload Image
+        - button "Board settings" [ref=e62] [cursor=pointer]:
+          - img [ref=e63]
+    - generic [ref=e67]: Loading planner...

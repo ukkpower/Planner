@@ -1,4 +1,5 @@
 import { Rnd } from 'react-rnd'
+import { Trash2 } from 'lucide-react'
 import { ItemToolbar } from './ItemToolbar'
 import { useBoardStore } from '../../stores/useBoardStore'
 import type { Asset } from '../../types/asset'
@@ -51,6 +52,7 @@ export function ImageBoardItem({ item, asset }: ImageBoardItemProps) {
   const selectedItemId = useBoardStore((state) => state.selectedItemId)
   const selectItem = useBoardStore((state) => state.selectItem)
   const updateItemFrame = useBoardStore((state) => state.updateItemFrame)
+  const deleteItem = useBoardStore((state) => state.deleteItem)
   const selected = selectedItemId === item.id
   const aspectRatio = getImageAspectRatio(item, asset)
 
@@ -86,6 +88,19 @@ export function ImageBoardItem({ item, asset }: ImageBoardItemProps) {
         selected ? 'border-[#88c39d] ring-2 ring-[#88c39d]/25' : 'border-white/12'
       }`}
     >
+      <button
+        type="button"
+        title="Delete image"
+        aria-label="Delete image"
+        onMouseDown={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation()
+          void deleteItem(item.id)
+        }}
+        className="pointer-events-none absolute -right-3 -top-3 z-20 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-[#111419]/95 text-red-200 opacity-0 shadow-xl backdrop-blur transition hover:bg-red-500 hover:text-white focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#88c39d] group-hover:pointer-events-auto group-hover:opacity-100"
+      >
+        <Trash2 size={15} />
+      </button>
       <div className="relative h-full w-full overflow-hidden rounded-[7px]">
         {asset ? (
           <img

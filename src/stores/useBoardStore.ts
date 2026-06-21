@@ -22,6 +22,7 @@ type BoardState = {
   addImages: (files: FileList | File[]) => Promise<void>
   selectItem: (itemId?: string) => void
   updateItemFrame: (itemId: string, frame: Pick<BoardItem, 'x' | 'y' | 'width' | 'height'>) => void
+  deleteItem: (itemId: string) => Promise<void>
   deleteSelectedItem: () => Promise<void>
   moveSelectedItemLayer: (direction: 'forward' | 'backward') => Promise<void>
   flushPendingSave: () => Promise<void>
@@ -215,6 +216,16 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     })
   },
 
+  async deleteItem(itemId) {
+    pendingItems.delete(itemId)
+    await boardRepository.deleteItem(itemId)
+
+    set((state) => ({
+      items: state.items.filter((item) => item.id !== itemId),
+      selectedItemId: state.selectedItemId === itemId ? undefined : state.selectedItemId,
+    }))
+  },
+
   async deleteSelectedItem() {
     const selectedItemId = get().selectedItemId
 
@@ -222,12 +233,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       return
     }
 
-    pendingItems.delete(selectedItemId)
-    await boardRepository.deleteItem(selectedItemId)
-    set((state) => ({
-      items: state.items.filter((item) => item.id !== selectedItemId),
-      selectedItemId: undefined,
-    }))
+    await get().deleteItem(selectedItemId)
   },
 
   async moveSelectedItemLayer(direction) {
