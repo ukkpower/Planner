@@ -2,7 +2,6 @@ services:
   - type: web
     name: cosy-level-planner
     runtime: static
-    plan: free
     buildCommand: npm ci && npm run build:render
     staticPublishPath: ./dist
     autoDeployTrigger: commit
