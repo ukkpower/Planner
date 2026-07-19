@@ -1,4 +1,4 @@
-import { Search, Settings2 } from 'lucide-react'
+import { BookOpen, Settings2 } from 'lucide-react'
 import { UploadImageButton } from '../board/UploadImageButton'
 import type { BoardSection } from '../../types/board'
 import { sectionLabels } from '../../types/board'
@@ -7,9 +7,10 @@ import type { Level } from '../../types/level'
 type TopNavProps = {
   activeSection: BoardSection
   activeLevel?: Level
+  onOpenLevelGuide: () => void
 }
 
-export function TopNav({ activeSection, activeLevel }: TopNavProps) {
+export function TopNav({ activeSection, activeLevel, onOpenLevelGuide }: TopNavProps) {
   return (
     <header className="z-10 flex h-24 shrink-0 items-center justify-between border-b border-white/10 bg-[#1b1e26]/90 px-7 backdrop-blur">
       <div className="min-w-0">
@@ -22,10 +23,15 @@ export function TopNav({ activeSection, activeLevel }: TopNavProps) {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="hidden h-11 w-[260px] items-center gap-3 rounded-[8px] border border-white/10 bg-white/[0.035] px-4 text-stone-500 lg:flex">
-          <Search size={18} />
-          <span className="text-sm">Search levels later</span>
-        </div>
+        <button
+          type="button"
+          onClick={onOpenLevelGuide}
+          className="hidden h-11 w-[260px] items-center gap-3 rounded-[8px] border border-white/10 bg-white/[0.035] px-4 text-left text-stone-300 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white lg:flex"
+          aria-haspopup="dialog"
+        >
+          <BookOpen size={18} />
+          <span className="text-sm">Level Guide</span>
+        </button>
         <UploadImageButton disabled={!activeLevel} />
         <button
           type="button"

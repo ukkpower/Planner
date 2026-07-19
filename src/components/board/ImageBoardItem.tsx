@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Rnd } from 'react-rnd'
 import { Trash2 } from 'lucide-react'
 import { ItemToolbar } from './ItemToolbar'
@@ -13,6 +14,8 @@ type ImageBoardItemProps = {
   item: ImageBoardItemType
   asset?: AssetEntry
 }
+
+type ItemFrame = Pick<ImageBoardItemType, 'x' | 'y' | 'width' | 'height'>
 
 function getImageAspectRatio(item: ImageBoardItemType, asset?: AssetEntry) {
   if (asset?.width && asset.height) {
@@ -55,11 +58,13 @@ export function ImageBoardItem({ item, asset }: ImageBoardItemProps) {
   const deleteItem = useBoardStore((state) => state.deleteItem)
   const selected = selectedItemId === item.id
   const aspectRatio = getImageAspectRatio(item, asset)
+  const [liveFrame, setLiveFrame] = useState<ItemFrame>()
+  const frame = liveFrame ?? item
 
   return (
     <Rnd
-      size={{ width: item.width, height: item.height }}
-      position={{ x: item.x, y: item.y }}
+      size={{ width: frame.width, height: frame.height }}
+      position={{ x: frame.x, y: frame.y }}
       bounds="parent"
       minWidth={96}
       minHeight={72}
@@ -70,6 +75,22 @@ export function ImageBoardItem({ item, asset }: ImageBoardItemProps) {
         event.stopPropagation()
         selectItem(item.id)
       }}
+      onDragStart={() => {
+        setLiveFrame({
+          x: item.x,
+          y: item.y,
+          width: item.width,
+          height: item.height,
+        })
+      }}
+      onDrag={(_event, data) => {
+        setLiveFrame({
+          x: data.x,
+          y: data.y,
+          width: item.width,
+          height: item.height,
+        })
+      }}
       onDragStop={(_event, data) => {
         updateItemFrame(item.id, {
           x: Math.round(data.x),
@@ -77,14 +98,27 @@ export function ImageBoardItem({ item, asset }: ImageBoardItemProps) {
           width: item.width,
           height: item.height,
         })
+        setLiveFrame(undefined)
+      }}
+      onResizeStart={() => {
+        setLiveFrame({
+          x: item.x,
+          y: item.y,
+          width: item.width,
+          height: item.height,
+        })
+      }}
+      onResize={(_event, direction, ref, _delta, position) => {
+        setLiveFrame(getAspectLockedFrame(direction, position, ref.offsetWidth, aspectRatio))
       }}
       onResizeStop={(_event, direction, ref, _delta, position) => {
         updateItemFrame(
           item.id,
           getAspectLockedFrame(direction, position, ref.offsetWidth, aspectRatio),
         )
+        setLiveFrame(undefined)
       }}
-      className={`group rounded-[8px] border bg-[#0f1217] shadow-2xl transition ${
+      className={`group rounded-[8px] border bg-[#0f1217] shadow-2xl transition-colors ${
         selected ? 'border-[#88c39d] ring-2 ring-[#88c39d]/25' : 'border-white/12'
       }`}
     >

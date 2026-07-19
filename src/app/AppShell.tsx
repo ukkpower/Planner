@@ -6,6 +6,7 @@ import { TopNav } from '../components/layout/TopNav'
 import { AddLevelModal } from '../components/modals/AddLevelModal'
 import { DeleteLevelModal } from '../components/modals/DeleteLevelModal'
 import { EditLevelModal } from '../components/modals/EditLevelModal'
+import { LevelGuideModal } from '../components/modals/LevelGuideModal'
 import { useAppStore } from '../stores/useAppStore'
 import { useBoardStore } from '../stores/useBoardStore'
 import type { Level } from '../types/level'
@@ -30,6 +31,7 @@ export function AppShell() {
   const { loadBoard, flushPendingSave } = useBoardStore()
   const [levelToDelete, setLevelToDelete] = useState<Level>()
   const [levelToEdit, setLevelToEdit] = useState<Level>()
+  const [isLevelGuideOpen, setIsLevelGuideOpen] = useState(false)
 
   const activeLevel = levels.find((level) => level.id === activeLevelId)
 
@@ -77,7 +79,11 @@ export function AppShell() {
           }}
         />
         <main className="flex min-w-0 flex-1 flex-col">
-          <TopNav activeSection={activeSection} activeLevel={activeLevel} />
+          <TopNav
+            activeSection={activeSection}
+            activeLevel={activeLevel}
+            onOpenLevelGuide={() => setIsLevelGuideOpen(true)}
+          />
           <MoodBoardView
             initialized={initialized}
             activeLevel={activeLevel}
@@ -101,6 +107,9 @@ export function AppShell() {
           onClose={() => setLevelToEdit(undefined)}
           onUpdate={updateLevel}
         />
+      ) : null}
+      {isLevelGuideOpen ? (
+        <LevelGuideModal onClose={() => setIsLevelGuideOpen(false)} />
       ) : null}
     </div>
   )
