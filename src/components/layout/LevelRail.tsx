@@ -150,7 +150,9 @@ export function LevelRail({
                   <button
                     type="button"
                     onClick={() => onDeleteLevel(level)}
-                    className="pointer-events-none absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-[8px] border border-red-300/15 bg-[#1d2028]/95 text-stone-400 opacity-0 shadow-lg transition hover:border-red-300/35 hover:bg-red-500/12 hover:text-red-200 focus:pointer-events-auto focus:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100"
+                    className={`absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-[8px] border border-red-300/15 bg-[#1d2028]/95 text-stone-400 shadow-lg transition hover:border-red-300/35 hover:bg-red-500/12 hover:text-red-200 focus:pointer-events-auto focus:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 ${
+                      active ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+                    }`}
                     title={`Delete Level ${level.number}`}
                     aria-label={`Delete Level ${level.number}`}
                   >
