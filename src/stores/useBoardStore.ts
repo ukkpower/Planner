@@ -1,14 +1,19 @@
 import { create } from 'zustand'
-import { assetRepository } from '../repositories/assetRepository'
 import { boardRepository } from '../repositories/boardRepository'
 import type { Asset } from '../types/asset'
-import type { Board, BoardItem, BoardSection, ImageBoardItem } from '../types/board'
+import type { Board, BoardItem } from '../types/board'
 import { nowIso } from '../utils/dates'
 import { getDefaultImageSize, getImageDimensions } from '../utils/image'
 import { getNextZIndex, reorderItemLayer } from '../utils/zIndex'
 
 type AssetEntry = Asset & {
   url: string
+}
+
+type BoardSnapshot = {
+  board: Board
+  items: BoardItem[]
+  assets: Asset[]
 }
 
 type BoardState = {
@@ -18,7 +23,8 @@ type BoardState = {
   selectedItemId?: string
   loading: boolean
   error?: string
-  loadBoard: (levelId?: string, section?: BoardSection) => Promise<void>
+  beginBoardLoad: (hasActiveBoard: boolean) => void
+  syncBoard: (snapshot: BoardSnapshot | null) => void
   addImages: (files: FileList | File[]) => Promise<void>
   selectItem: (itemId?: string) => void
   updateItemFrame: (itemId: string, frame: Pick<BoardItem, 'x' | 'y' | 'width' | 'height'>) => void
@@ -30,10 +36,6 @@ type BoardState = {
 
 const pendingItems = new Map<string, BoardItem>()
 let saveTimer: ReturnType<typeof setTimeout> | undefined
-
-function revokeAssetUrls(assetsById: Record<string, AssetEntry>) {
-  Object.values(assetsById).forEach((asset) => URL.revokeObjectURL(asset.url))
-}
 
 async function persistPendingItems() {
   if (saveTimer) {
@@ -66,11 +68,8 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   loading: false,
   error: undefined,
 
-  async loadBoard(levelId, section) {
-    await persistPendingItems()
-    revokeAssetUrls(get().assetsById)
-
-    if (!levelId || !section) {
+  beginBoardLoad(hasActiveBoard) {
+    if (!hasActiveBoard) {
       set({
         board: undefined,
         items: [],
@@ -81,49 +80,39 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       })
       return
     }
-
     set({ loading: true, error: undefined, selectedItemId: undefined })
+  },
 
-    try {
-      const board = await boardRepository.getBoard(levelId, section)
+  syncBoard(snapshot) {
+    if (!snapshot) {
+      set({
+        board: undefined,
+        items: [],
+        assetsById: {},
+        loading: false,
+        error: 'This level does not have a board for the selected section.',
+      })
+      return
+    }
 
-      if (!board) {
-        set({
-          board: undefined,
-          items: [],
-          assetsById: {},
-          loading: false,
-          error: 'This level does not have a board for the selected section.',
-        })
-        return
-      }
-
-      const items = await boardRepository.listItems(board.id)
-      const assetIds = items
-        .filter((item): item is ImageBoardItem => item.type === 'image')
-        .map((item) => item.assetId)
-      const assets = await assetRepository.getAssets(assetIds)
-      const assetsById = assets.reduce<Record<string, AssetEntry>>((result, asset) => {
+    const assetsById = snapshot.assets.reduce<Record<string, AssetEntry>>((result, asset) => {
+      if (asset.url) {
         result[asset.id] = {
           ...asset,
-          url: URL.createObjectURL(asset.blob),
+          url: asset.url,
         }
-        return result
-      }, {})
+      }
+      return result
+    }, {})
+    const items = snapshot.items.map((item) => pendingItems.get(item.id) ?? item)
 
-      set({
-        board,
-        items,
-        assetsById,
-        loading: false,
-        error: undefined,
-      })
-    } catch (error) {
-      set({
-        loading: false,
-        error: error instanceof Error ? error.message : 'Could not load this board.',
-      })
-    }
+    set({
+      board: snapshot.board,
+      items,
+      assetsById,
+      loading: false,
+      error: undefined,
+    })
   },
 
   async addImages(filesInput) {
@@ -140,56 +129,25 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     }
 
     const existingItems = get().items
-    const newItems: ImageBoardItem[] = []
-    const newAssets: Record<string, AssetEntry> = {}
+    let selectedItemId: string | undefined
 
-    for (const file of files) {
-      const timestamp = nowIso()
+    for (const [index, file] of files.entries()) {
       const dimensions = await getImageDimensions(file)
       const displaySize = getDefaultImageSize(dimensions)
-      const asset: Asset = {
-        id: crypto.randomUUID(),
-        kind: 'image',
-        blob: file.slice(0, file.size, file.type),
-        mimeType: file.type,
-        fileName: file.name,
+      const result = await boardRepository.addImage({
+        boardId: board.id,
+        file,
         width: dimensions.width,
         height: dimensions.height,
-        createdAt: timestamp,
-      }
-      const item: ImageBoardItem = {
-        id: crypto.randomUUID(),
-        boardId: board.id,
-        type: 'image',
-        assetId: asset.id,
-        alt: file.name,
-        x: 220 + ((existingItems.length + newItems.length) % 5) * 38,
-        y: 180 + ((existingItems.length + newItems.length) % 4) * 34,
-        width: displaySize.width,
-        height: displaySize.height,
-        zIndex: getNextZIndex([...existingItems, ...newItems]),
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      }
-
-      await assetRepository.addAsset(asset)
-      newAssets[asset.id] = {
-        ...asset,
-        url: URL.createObjectURL(asset.blob),
-      }
-      newItems.push(item)
+        x: 220 + ((existingItems.length + index) % 5) * 38,
+        y: 180 + ((existingItems.length + index) % 4) * 34,
+        displayWidth: displaySize.width,
+        displayHeight: displaySize.height,
+        zIndex: getNextZIndex(existingItems) + index,
+      })
+      selectedItemId = result.itemId
     }
-
-    await boardRepository.addItems(newItems)
-
-    set((state) => ({
-      items: [...state.items, ...newItems],
-      assetsById: {
-        ...state.assetsById,
-        ...newAssets,
-      },
-      selectedItemId: newItems[newItems.length - 1]?.id,
-    }))
+    set({ selectedItemId })
   },
 
   selectItem(itemId) {

@@ -8,7 +8,7 @@ The app is a local-first React SPA with three mood boards per level:
 - Planning
 - Final
 
-Each board supports local image upload, freeform drag and resize, deletion, layer ordering, and IndexedDB persistence through Dexie.
+Each board supports image upload, freeform drag and resize, deletion, layer ordering, and real-time shared persistence through Convex.
 
 ## Tech Stack
 
@@ -16,7 +16,7 @@ Each board supports local image upload, freeform drag and resize, deletion, laye
 - TypeScript
 - Vite
 - Tailwind CSS
-- Dexie / IndexedDB
+- Convex database and file storage
 - Zustand
 - react-rnd
 - lucide-react
@@ -25,6 +25,7 @@ Each board supports local image upload, freeform drag and resize, deletion, laye
 
 ```bash
 npm install
+npx convex dev
 npm run dev
 ```
 
@@ -36,3 +37,7 @@ Then open the local URL printed by Vite.
 npm run lint
 npm run build
 ```
+
+## Deploy to Render
+
+The app is configured as a Render static site in `render.yaml`. Add a production Convex deploy key as the `CONVEX_DEPLOY_KEY` secret in Render before the first deployment. The build publishes the Convex functions and compiles the Vite site against the corresponding production deployment URL.

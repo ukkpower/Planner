@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
 import { MoodBoardView } from '../components/board/MoodBoardView'
 import { LevelRail } from '../components/layout/LevelRail'
 import { MainSidebar } from '../components/layout/MainSidebar'
@@ -14,7 +16,7 @@ import type { Level } from '../types/level'
 export function AppShell() {
   const {
     initialized,
-    initialize,
+    syncLevels,
     levels,
     activeSection,
     activeLevelId,
@@ -28,22 +30,29 @@ export function AppShell() {
     reorderLevels,
     deleteLevel,
   } = useAppStore()
-  const { loadBoard, flushPendingSave } = useBoardStore()
+  const { beginBoardLoad, syncBoard, flushPendingSave } = useBoardStore()
   const [levelToDelete, setLevelToDelete] = useState<Level>()
   const [levelToEdit, setLevelToEdit] = useState<Level>()
   const [isLevelGuideOpen, setIsLevelGuideOpen] = useState(false)
 
   const activeLevel = levels.find((level) => level.id === activeLevelId)
+  const remoteLevels = useQuery(api.levels.list)
+  const remoteBoard = useQuery(
+    api.boards.get,
+    activeLevelId ? { levelId: activeLevelId, section: activeSection } : 'skip',
+  )
 
   useEffect(() => {
-    void initialize()
-  }, [initialize])
+    if (remoteLevels) syncLevels(remoteLevels)
+  }, [remoteLevels, syncLevels])
 
   useEffect(() => {
-    if (initialized) {
-      void loadBoard(activeLevelId, activeSection)
-    }
-  }, [activeLevelId, activeSection, initialized, loadBoard])
+    beginBoardLoad(Boolean(activeLevelId))
+  }, [activeLevelId, activeSection, beginBoardLoad])
+
+  useEffect(() => {
+    if (remoteBoard !== undefined) syncBoard(remoteBoard)
+  }, [remoteBoard, syncBoard])
 
   useEffect(() => {
     const handleBeforeUnload = () => {

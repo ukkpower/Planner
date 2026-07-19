@@ -1,7 +1,8 @@
-import { db } from '../db/db'
 import type { BoardSection } from '../types/board'
 import type { AppSettings } from '../types/settings'
 import { nowIso } from '../utils/dates'
+
+const storageKey = 'cosy-level-planner-settings'
 
 const defaultSettings: AppSettings = {
   id: 'app',
@@ -12,24 +13,26 @@ const defaultSettings: AppSettings = {
 }
 
 export const settingsRepository = {
-  async getSettings() {
-    const existing = await db.settings.get('app')
-
-    if (existing) {
-      return existing
+  getSettings() {
+    try {
+      const storedSettings = localStorage.getItem(storageKey)
+      if (storedSettings) {
+        return { ...defaultSettings, ...JSON.parse(storedSettings) } as AppSettings
+      }
+    } catch {
+      // Invalid or unavailable browser storage should not prevent the shared app from loading.
     }
-
-    await db.settings.put(defaultSettings)
     return defaultSettings
   },
 
-  async updateActiveContext(activeSection: BoardSection, activeLevelId?: string) {
-    const current = await this.getSettings()
-    await db.settings.put({
+  updateActiveContext(activeSection: BoardSection, activeLevelId?: string) {
+    const current = this.getSettings()
+    const settings: AppSettings = {
       ...current,
       activeSection,
       activeLevelId,
       updatedAt: nowIso(),
-    })
+    }
+    localStorage.setItem(storageKey, JSON.stringify(settings))
   },
 }

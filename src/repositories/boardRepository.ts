@@ -1,36 +1,68 @@
-import { db } from '../db/db'
-import type { BoardSection, BoardItem } from '../types/board'
-import { nowIso } from '../utils/dates'
+import type { Id } from '../../convex/_generated/dataModel'
+import { api } from '../../convex/_generated/api'
+import { convex } from '../lib/convex'
+import type { BoardItem } from '../types/board'
+
+type NewImageInput = {
+  boardId: string
+  file: File
+  width?: number
+  height?: number
+  x: number
+  y: number
+  displayWidth: number
+  displayHeight: number
+  zIndex: number
+}
+
+function mutableItemFields(item: BoardItem) {
+  return {
+    id: item.id,
+    x: item.x,
+    y: item.y,
+    width: item.width,
+    height: item.height,
+    zIndex: item.zIndex,
+    rotation: item.rotation,
+    locked: item.locked,
+  }
+}
 
 export const boardRepository = {
-  async getBoard(levelId: string, section: BoardSection) {
-    return db.boards.where('[levelId+section]').equals([levelId, section]).first()
-  },
+  async addImage(input: NewImageInput) {
+    const uploadUrl = await convex.mutation(api.boards.generateUploadUrl, {})
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': input.file.type },
+      body: input.file,
+    })
 
-  async listItems(boardId: string) {
-    return db.boardItems.where('boardId').equals(boardId).sortBy('zIndex')
-  },
-
-  async addItems(items: BoardItem[]) {
-    await db.boardItems.bulkAdd(items)
-  },
-
-  async putItems(items: BoardItem[]) {
-    if (items.length === 0) {
-      return
+    if (!response.ok) {
+      throw new Error(`Image upload failed (${response.status}).`)
     }
 
-    await db.boardItems.bulkPut(items)
-  },
-
-  async updateItem(item: BoardItem) {
-    await db.boardItems.put({
-      ...item,
-      updatedAt: nowIso(),
+    const result = (await response.json()) as { storageId: Id<'_storage'> }
+    return convex.mutation(api.boards.addImage, {
+      boardId: input.boardId,
+      storageId: result.storageId,
+      mimeType: input.file.type,
+      fileName: input.file.name,
+      width: input.width,
+      height: input.height,
+      x: input.x,
+      y: input.y,
+      displayWidth: input.displayWidth,
+      displayHeight: input.displayHeight,
+      zIndex: input.zIndex,
     })
   },
 
+  async putItems(items: BoardItem[]) {
+    if (items.length === 0) return
+    await convex.mutation(api.boards.updateItems, { items: items.map(mutableItemFields) })
+  },
+
   async deleteItem(itemId: string) {
-    await db.boardItems.delete(itemId)
+    await convex.mutation(api.boards.removeItem, { itemId })
   },
 }

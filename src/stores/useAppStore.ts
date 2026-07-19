@@ -10,7 +10,7 @@ type AppState = {
   activeSection: BoardSection
   activeLevelId?: string
   isAddLevelOpen: boolean
-  initialize: () => Promise<void>
+  syncLevels: (levels: Level[]) => void
   setActiveSection: (section: BoardSection) => Promise<void>
   setActiveLevel: (levelId: string) => Promise<void>
   openAddLevelModal: () => void
@@ -21,40 +21,33 @@ type AppState = {
   deleteLevel: (levelId: string) => Promise<void>
 }
 
+const initialSettings = settingsRepository.getSettings()
+
 export const useAppStore = create<AppState>((set, get) => ({
   initialized: false,
   levels: [],
-  activeSection: 'research',
-  activeLevelId: undefined,
+  activeSection: initialSettings.activeSection ?? 'research',
+  activeLevelId: initialSettings.activeLevelId,
   isAddLevelOpen: false,
 
-  async initialize() {
-    const [levels, settings] = await Promise.all([
-      levelRepository.listLevels(),
-      settingsRepository.getSettings(),
-    ])
-    const activeLevelId = levels.some((level) => level.id === settings.activeLevelId)
-      ? settings.activeLevelId
+  syncLevels(levels) {
+    const activeLevelId = get().activeLevelId
+    const nextActiveLevelId = levels.some((level) => level.id === activeLevelId)
+      ? activeLevelId
       : levels[0]?.id
-
-    set({
-      initialized: true,
-      levels,
-      activeSection: settings.activeSection ?? 'research',
-      activeLevelId,
-    })
+    set({ initialized: true, levels, activeLevelId: nextActiveLevelId })
   },
 
   async setActiveSection(section) {
     const activeLevelId = get().activeLevelId
     set({ activeSection: section })
-    await settingsRepository.updateActiveContext(section, activeLevelId)
+    settingsRepository.updateActiveContext(section, activeLevelId)
   },
 
   async setActiveLevel(levelId) {
     const activeSection = get().activeSection
     set({ activeLevelId: levelId })
-    await settingsRepository.updateActiveContext(activeSection, levelId)
+    settingsRepository.updateActiveContext(activeSection, levelId)
   },
 
   openAddLevelModal() {
@@ -73,7 +66,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeLevelId: level.id,
       isAddLevelOpen: false,
     }))
-    await settingsRepository.updateActiveContext(activeSection, level.id)
+    settingsRepository.updateActiveContext(activeSection, level.id)
   },
 
   async updateLevel(levelId, input) {
@@ -86,8 +79,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   async reorderLevels(orderedLevelIds) {
-    const reorderedLevels = await levelRepository.reorderLevels(orderedLevelIds)
+    const levelById = new Map(get().levels.map((level) => [level.id, level]))
+    const reorderedLevels = orderedLevelIds
+      .map((levelId, index) => {
+        const level = levelById.get(levelId)
+        return level ? { ...level, number: String(index + 1).padStart(2, '0') } : undefined
+      })
+      .filter((level): level is Level => Boolean(level))
     set({ levels: reorderedLevels })
+    await levelRepository.reorderLevels(orderedLevelIds)
   },
 
   async deleteLevel(levelId) {
@@ -105,6 +105,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       levels: remainingLevels,
       activeLevelId: nextActiveLevelId,
     })
-    await settingsRepository.updateActiveContext(activeSection, nextActiveLevelId)
+    settingsRepository.updateActiveContext(activeSection, nextActiveLevelId)
   },
 }))
