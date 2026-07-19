@@ -7,6 +7,7 @@ import { MainSidebar } from '../components/layout/MainSidebar'
 import { TopNav } from '../components/layout/TopNav'
 import { AddLevelModal } from '../components/modals/AddLevelModal'
 import { DeleteLevelModal } from '../components/modals/DeleteLevelModal'
+import { DesignGuideModal } from '../components/modals/DesignGuideModal'
 import { EditLevelModal } from '../components/modals/EditLevelModal'
 import { LevelGuideModal } from '../components/modals/LevelGuideModal'
 import { useAppStore } from '../stores/useAppStore'
@@ -34,6 +35,7 @@ export function AppShell() {
   const [levelToDelete, setLevelToDelete] = useState<Level>()
   const [levelToEdit, setLevelToEdit] = useState<Level>()
   const [isLevelGuideOpen, setIsLevelGuideOpen] = useState(false)
+  const [isDesignGuideOpen, setIsDesignGuideOpen] = useState(false)
 
   const activeLevel = levels.find((level) => level.id === activeLevelId)
   const remoteLevels = useQuery(api.levels.list)
@@ -92,6 +94,7 @@ export function AppShell() {
             activeSection={activeSection}
             activeLevel={activeLevel}
             onOpenLevelGuide={() => setIsLevelGuideOpen(true)}
+            onOpenDesignGuide={() => setIsDesignGuideOpen(true)}
           />
           <MoodBoardView
             initialized={initialized}
@@ -119,6 +122,9 @@ export function AppShell() {
       ) : null}
       {isLevelGuideOpen ? (
         <LevelGuideModal onClose={() => setIsLevelGuideOpen(false)} />
+      ) : null}
+      {isDesignGuideOpen ? (
+        <DesignGuideModal onClose={() => setIsDesignGuideOpen(false)} />
       ) : null}
     </div>
   )
