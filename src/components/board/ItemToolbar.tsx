@@ -13,6 +13,7 @@ export function ItemToolbar() {
       <button
         type="button"
         title="Send backward"
+        aria-label="Send backward"
         onClick={() => void moveSelectedItemLayer('backward')}
         className="grid h-8 w-8 place-items-center rounded-[6px] text-stone-300 transition hover:bg-white/10 hover:text-white"
       >
@@ -21,6 +22,7 @@ export function ItemToolbar() {
       <button
         type="button"
         title="Bring forward"
+        aria-label="Bring forward"
         onClick={() => void moveSelectedItemLayer('forward')}
         className="grid h-8 w-8 place-items-center rounded-[6px] text-stone-300 transition hover:bg-white/10 hover:text-white"
       >
@@ -28,7 +30,8 @@ export function ItemToolbar() {
       </button>
       <button
         type="button"
-        title="Delete image"
+        title="Delete item"
+        aria-label="Delete item"
         onClick={() => void deleteSelectedItem()}
         className="grid h-8 w-8 place-items-center rounded-[6px] text-red-200 transition hover:bg-red-500/15 hover:text-red-100"
       >

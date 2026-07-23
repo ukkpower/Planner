@@ -8,7 +8,7 @@ The app is a local-first React SPA with three mood boards per level:
 - Planning
 - Final
 
-Each board supports image upload, freeform drag and resize, deletion, layer ordering, and real-time shared persistence through Convex.
+Each board supports image upload, editable post-it notes, freeform drag and resize, deletion, layer ordering, and real-time shared persistence through Convex.
 
 ## Tech Stack
 

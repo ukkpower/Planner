@@ -1,4 +1,5 @@
 import { BookOpen, Palette, Settings2 } from 'lucide-react'
+import { AddNoteButton } from '../board/AddNoteButton'
 import { UploadImageButton } from '../board/UploadImageButton'
 import type { BoardSection } from '../../types/board'
 import { sectionLabels } from '../../types/board'
@@ -49,6 +50,7 @@ export function TopNav({
             <span className="text-sm">Design Guide</span>
           </button>
         </div>
+        <AddNoteButton disabled={!activeLevel} />
         <UploadImageButton disabled={!activeLevel} />
         <button
           type="button"

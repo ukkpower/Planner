@@ -138,6 +138,42 @@ export const addImage = mutation({
   },
 })
 
+export const addText = mutation({
+  args: {
+    boardId: v.string(),
+    text: v.string(),
+    color: v.string(),
+    fontSize: v.number(),
+    x: v.number(),
+    y: v.number(),
+    width: v.number(),
+    height: v.number(),
+    zIndex: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const boardId = ctx.db.normalizeId('boards', args.boardId)
+    if (!boardId || !(await ctx.db.get(boardId))) throw new Error('Board not found.')
+
+    const timestamp = new Date().toISOString()
+    const itemId = await ctx.db.insert('boardItems', {
+      boardId,
+      type: 'text',
+      text: args.text,
+      color: args.color,
+      fontSize: args.fontSize,
+      x: args.x,
+      y: args.y,
+      width: args.width,
+      height: args.height,
+      zIndex: args.zIndex,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    })
+
+    return { itemId }
+  },
+})
+
 const itemUpdate = v.object({
   id: v.string(),
   x: v.number(),
@@ -147,6 +183,9 @@ const itemUpdate = v.object({
   zIndex: v.number(),
   rotation: v.optional(v.number()),
   locked: v.optional(v.boolean()),
+  text: v.optional(v.string()),
+  color: v.optional(v.string()),
+  fontSize: v.optional(v.number()),
 })
 
 export const updateItems = mutation({
@@ -156,8 +195,12 @@ export const updateItems = mutation({
     await Promise.all(
       args.items.map(async (item) => {
         const itemId = ctx.db.normalizeId('boardItems', item.id)
-        if (!itemId || !(await ctx.db.get(itemId))) return
-        await ctx.db.patch(itemId, {
+        if (!itemId) return
+
+        const existingItem = await ctx.db.get(itemId)
+        if (!existingItem) return
+
+        const frameUpdate = {
           x: item.x,
           y: item.y,
           width: item.width,
@@ -166,7 +209,19 @@ export const updateItems = mutation({
           rotation: item.rotation,
           locked: item.locked,
           updatedAt: timestamp,
-        })
+        }
+
+        if (existingItem.type === 'text') {
+          await ctx.db.patch(itemId, {
+            ...frameUpdate,
+            text: item.text ?? existingItem.text,
+            color: item.color ?? existingItem.color,
+            fontSize: item.fontSize ?? existingItem.fontSize,
+          })
+          return
+        }
+
+        await ctx.db.patch(itemId, frameUpdate)
       }),
     )
   },

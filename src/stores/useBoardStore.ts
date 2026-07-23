@@ -26,8 +26,10 @@ type BoardState = {
   beginBoardLoad: (hasActiveBoard: boolean) => void
   syncBoard: (snapshot: BoardSnapshot | null) => void
   addImages: (files: FileList | File[]) => Promise<void>
+  addNote: () => Promise<void>
   selectItem: (itemId?: string) => void
   updateItemFrame: (itemId: string, frame: Pick<BoardItem, 'x' | 'y' | 'width' | 'height'>) => void
+  updateItemText: (itemId: string, text: string) => void
   deleteItem: (itemId: string) => Promise<void>
   deleteSelectedItem: () => Promise<void>
   moveSelectedItemLayer: (direction: 'forward' | 'backward') => Promise<void>
@@ -150,6 +152,30 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     set({ selectedItemId })
   },
 
+  async addNote() {
+    const board = get().board
+
+    if (!board) {
+      return
+    }
+
+    const existingItems = get().items
+    const itemOffset = existingItems.length
+    const result = await boardRepository.addText({
+      boardId: board.id,
+      text: '',
+      color: '#F5E98A',
+      fontSize: 18,
+      x: 260 + (itemOffset % 5) * 36,
+      y: 200 + (itemOffset % 4) * 32,
+      width: 280,
+      height: 240,
+      zIndex: getNextZIndex(existingItems),
+    })
+
+    set({ selectedItemId: result.itemId })
+  },
+
   selectItem(itemId) {
     set({ selectedItemId: itemId })
   },
@@ -164,6 +190,26 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         const updatedItem: BoardItem = {
           ...item,
           ...frame,
+          updatedAt: nowIso(),
+        }
+        scheduleItemSave(updatedItem)
+        return updatedItem
+      })
+
+      return { items }
+    })
+  },
+
+  updateItemText(itemId, text) {
+    set((state) => {
+      const items = state.items.map((item) => {
+        if (item.id !== itemId || item.type !== 'text') {
+          return item
+        }
+
+        const updatedItem: BoardItem = {
+          ...item,
+          text,
           updatedAt: nowIso(),
         }
         scheduleItemSave(updatedItem)

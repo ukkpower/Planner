@@ -122,6 +122,7 @@ export function ImageBoardItem({ item, asset }: ImageBoardItemProps) {
         selected ? 'border-[#88c39d] ring-2 ring-[#88c39d]/25' : 'border-white/12'
       }`}
     >
+      {selected ? <ItemToolbar /> : null}
       <button
         type="button"
         title="Delete image"
@@ -151,7 +152,6 @@ export function ImageBoardItem({ item, asset }: ImageBoardItemProps) {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-3 py-2 opacity-0 transition group-hover:opacity-100">
           <p className="truncate text-xs font-medium text-white/90">{item.alt ?? asset?.fileName}</p>
         </div>
-        {selected ? <ItemToolbar /> : null}
       </div>
     </Rnd>
   )

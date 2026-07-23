@@ -15,8 +15,20 @@ type NewImageInput = {
   zIndex: number
 }
 
+type NewTextInput = {
+  boardId: string
+  text: string
+  color: string
+  fontSize: number
+  x: number
+  y: number
+  width: number
+  height: number
+  zIndex: number
+}
+
 function mutableItemFields(item: BoardItem) {
-  return {
+  const common = {
     id: item.id,
     x: item.x,
     y: item.y,
@@ -26,6 +38,15 @@ function mutableItemFields(item: BoardItem) {
     rotation: item.rotation,
     locked: item.locked,
   }
+
+  return item.type === 'text'
+    ? {
+        ...common,
+        text: item.text,
+        color: item.color,
+        fontSize: item.fontSize,
+      }
+    : common
 }
 
 export const boardRepository = {
@@ -55,6 +76,10 @@ export const boardRepository = {
       displayHeight: input.displayHeight,
       zIndex: input.zIndex,
     })
+  },
+
+  async addText(input: NewTextInput) {
+    return convex.mutation(api.boards.addText, input)
   },
 
   async putItems(items: BoardItem[]) {
